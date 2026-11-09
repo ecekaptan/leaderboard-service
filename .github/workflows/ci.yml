@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      # Actions are pinned to a commit SHA (with the version in a comment): a tag can be moved, a SHA can't.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: temurin
+          java-version: "21.0.13"
+          # Caches ~/.m2/repository, keyed on the hash of pom.xml.
+          cache: maven
+
+      # Unit tests, then integration tests. Testcontainers uses the runner's Docker
+      # to start PostgreSQL and Redis, so no services need to be configured here.
+      - run: ./mvnw -B verify
