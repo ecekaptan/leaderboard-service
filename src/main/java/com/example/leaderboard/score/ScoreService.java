@@ -6,6 +6,7 @@ import com.example.leaderboard.player.PlayerNotFoundException;
 import com.example.leaderboard.player.PlayerRepository;
 import java.time.Clock;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 
@@ -40,7 +41,9 @@ public class ScoreService {
         if (!playerRepository.existsById(playerId)) {
             throw new PlayerNotFoundException(playerId);
         }
-        Instant submittedAt = Instant.now(clock);
+        // PostgreSQL stores microseconds. Truncating here means the time we encode into Redis is exactly the
+        // time the startup rebuild will later read back, so a rebuilt board orders ties the same way.
+        Instant submittedAt = Instant.now(clock).truncatedTo(ChronoUnit.MICROS);
 
         scoreSubmissionRepository.save(new ScoreSubmission(playerId, score, submittedAt));
         leaderboard.submit(playerId, score, submittedAt);

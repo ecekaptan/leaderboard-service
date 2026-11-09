@@ -3,11 +3,13 @@ package com.example.leaderboard.leaderboard;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.data.redis.connection.RedisZSetCommands.ZAddArgs;
+import org.springframework.data.redis.connection.zset.Tuple;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations.TypedTuple;
@@ -41,6 +43,26 @@ public class RedisLeaderboard {
         double encoded = ScoreEncoding.encode(score, achievedAt);
         redis.execute((RedisCallback<Boolean>) connection -> connection.zSetCommands()
                 .zAdd(bytes(KEY), encoded, bytes(playerId.toString()), ZAddArgs.empty().gt()));
+    }
+
+    /**
+     * Adds many best scores in one ZADD GT command: O(M log N) for M entries. Used by the rebuild.
+     * GT makes this safe to run while live submissions are arriving: whichever score is higher wins.
+     */
+    public void submitAll(List<BestScore> scores) {
+        Set<Tuple> tuples = new LinkedHashSet<>();
+        for (BestScore best : scores) {
+            double encoded = ScoreEncoding.encode(best.score(), best.achievedAt());
+            tuples.add(Tuple.of(bytes(best.playerId().toString()), encoded));
+        }
+        redis.execute((RedisCallback<Long>) connection -> connection.zSetCommands()
+                .zAdd(bytes(KEY), tuples, ZAddArgs.empty().gt()));
+    }
+
+    /** ZCARD: the number of players on the board. O(1). */
+    public long size() {
+        Long size = redis.opsForZSet().zCard(KEY);
+        return size == null ? 0 : size;
     }
 
     /** ZREVRANK + ZSCORE, each O(log N). Empty if the player has no score on the board. */

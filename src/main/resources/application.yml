@@ -20,6 +20,11 @@ spring:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
 
+leaderboard:
+  rebuild:
+    # Players read from PostgreSQL and written to Redis per round trip when rebuilding on startup.
+    batch-size: ${LEADERBOARD_REBUILD_BATCH_SIZE:5000}
+
 management:
   endpoints:
     web:
