@@ -1,0 +1,37 @@
+spring:
+  application:
+    name: leaderboard-service
+
+  # Defaults match docker-compose.yml; override with environment variables in other environments.
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/leaderboard}
+    username: ${DB_USERNAME:leaderboard}
+    password: ${DB_PASSWORD:leaderboard}
+
+  jpa:
+    # Flyway owns the schema. Hibernate only checks that the entities match it.
+    hibernate:
+      ddl-auto: validate
+    # Don't keep a database session open while the HTTP response is rendered.
+    open-in-view: false
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      # Show each component (db, redis, ...) in /actuator/health, not just the overall status.
+      show-details: always
+      probes:
+        enabled: true
+      group:
+        # /actuator/health/readiness is only UP when both data stores are reachable.
+        readiness:
+          include: readinessState, db, redis
