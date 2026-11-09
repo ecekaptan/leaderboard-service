@@ -28,7 +28,11 @@ import org.springframework.test.web.servlet.ResultActions;
  * <p>All integration tests extend this class so they share one cached Spring context (and one pair of
  * containers). Because the context is shared, every test starts by deleting all data.
  */
-@SpringBootTest
+@SpringBootTest(properties = {
+        // Lets tests count SQL statements (used to prove there is no N+1 query problem).
+        "spring.jpa.properties.hibernate.generate_statistics=true",
+        "logging.level.org.hibernate.engine.internal.StatisticalLoggingSessionEventListener=WARN"
+})
 @AutoConfigureMockMvc
 @Import({TestcontainersConfiguration.class, IntegrationTest.ClockTestConfiguration.class})
 public abstract class IntegrationTest {

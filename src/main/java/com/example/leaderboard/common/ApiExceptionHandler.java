@@ -1,5 +1,6 @@
 package com.example.leaderboard.common;
 
+import com.example.leaderboard.leaderboard.PlayerNotRankedException;
 import com.example.leaderboard.player.PlayerNotFoundException;
 import com.example.leaderboard.player.UsernameTakenException;
 import java.util.List;
@@ -37,6 +38,13 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     public ProblemDetail handlePlayerNotFound(PlayerNotFoundException e) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, e.getMessage());
         problem.setTitle("Player not found");
+        return problem;
+    }
+
+    @ExceptionHandler(PlayerNotRankedException.class)
+    public ProblemDetail handlePlayerNotRanked(PlayerNotRankedException e) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, e.getMessage());
+        problem.setTitle("Player not ranked");
         return problem;
     }
 
