@@ -1,6 +1,11 @@
 package com.example.leaderboard;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import com.jayway.jsonpath.JsonPath;
 import java.time.Instant;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -11,8 +16,10 @@ import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 
 /**
  * Base class for integration tests: the full application, real PostgreSQL and Redis (Testcontainers),
@@ -48,6 +55,23 @@ public abstract class IntegrationTest {
             return null;
         });
         clock.setInstant(START_TIME);
+    }
+
+    /** Creates a player through the API and returns its id. */
+    protected UUID createPlayer(String username) throws Exception {
+        String response = mockMvc.perform(post("/api/v1/players")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"username\": \"" + username + "\"}"))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        return UUID.fromString(JsonPath.read(response, "$.id"));
+    }
+
+    /** Submits a score through the API at the current (test) clock time. */
+    protected ResultActions submitScore(UUID playerId, long score) throws Exception {
+        return mockMvc.perform(post("/api/v1/scores")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"playerId\": \"" + playerId + "\", \"score\": " + score + "}"));
     }
 
     @TestConfiguration(proxyBeanMethods = false)
