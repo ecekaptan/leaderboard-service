@@ -139,6 +139,3 @@ keep the plain score in Redis and resolve equal scores from the `(score, time)` 
   suspicious scores in PostgreSQL for review but off the public board.
 - **Caching the top 100:** in-memory JSON with a 1-second TTL (e.g. Caffeine) means one `ZREVRANGE` per second
   per instance instead of thousands. Optionally invalidate early when a score beats the current 100th place.
-- **Also:** authentication; one Redis round trip for `POST /scores` (pipelining, a Lua script, or
-  `ZREVRANK ... WITHSCORE` in Redis 7.2+); Micrometer metrics and tracing; case-insensitive usernames (unique
-  index on `lower(username)`); the outbox and reconciliation job from sections 2 and 3.
